@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="./dist/web/index.js"></script>
+  <style>
+    #some-div > div > div {
+      border: 1px solid black;
+      margin-bottom: 2px;
+    }
+    #some-div > div > div:nth-child(1) div > div {
+      border: 1px solid black;
+      margin: 2px;
+    }
+    #some-div > div > div > div div  {
+      box-sizing: border-box;
+      padding-left: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrapper">
+    <div id="control">Control my modification</div>
+    <button onclick="freeze(value)">Freeze body</button>
+    <button onclick="thaw(value)">Thaw body</button>
+    <button onclick="changeValue()">Change control value</button>
+    <div id="some-table"></div>
+    <div id="some-div"></div>
+  </div>
+  <script>
+    const headers = ["Name", "Age", "School"];
+    const rows = [
+      ["Harry Potter", "18", "Hogwarts"],
+      ["Izuku Midoriya", "16", "UA High"],
+      ["Yonatan Vega", "24", "College of Management"],
+    ];
+    const divs = [
+      ["Harry Potter", "18",
+        ["Harry Potter", "18",
+          ["Izuku Midoriya", "16",
+            ["Yonatan Vega", "24", "College of Management"]
+          ]
+        ]
+      ],
+      ["Izuku Midoriya", "16", "UA High"],
+      ["Yonatan Vega", "24", "College of Management"],
+    ];
+    document.getElementById("some-table").appendChild(Reelm.getTable(headers, rows));
+    document.getElementById("some-div").appendChild(Reelm.getDiv(divs));
+    const frozen = new Set();
+    const id = 'control'
+    // Set a function on the document that returns it's context
+    document.getContext = function() {
+      return this;
+    }
+    
+    const DOCgetElementById = document.getElementById.bind(document.getContext());
+    
+    document.freezeElementById = (elementId) => {
+      frozen.add(elementId);
+    };
+    
+    document.thawElementById = (elementId) => {
+      frozen.delete(elementId);
+    };
+    
+    document.getElementById = (elementId) => {
+      if (frozen.has(elementId)) return undefined;
+      return DOCgetElementById(elementId);
+    };
+
+    function freeze() {
+      document.freezeElementById(id);
+    }
+
+    function thaw() {
+      document.thawElementById(id);
+    }
+
+    function changeValue() {
+      const charCodeArray = new Array();
+      const randomLength = Math.floor(Math.random() * (60 - 40 + 1) + 40);
+      for(let i = 0; i < randomLength; i++) {
+        const isSpace = Math.round(Math.random()) == 1;
+        if (isSpace) {
+          charCodeArray.push(32);
+          continue;
+        }
+        let randomAscii = Math.floor(Math.random() * (122 - 65 + 1) + 65);
+        if (randomAscii >= 91 && randomAscii <= 96) randomAscii += 6;
+        charCodeArray.push(randomAscii);
+      }
+      const control = document.getElementById(id);
+      if (control !== undefined) {
+        control.innerText = String.fromCharCode(...charCodeArray);
+        return;
+      }
+      alert(`${id} is frozen`);
+    }
+  </script>
+</body>
+</html>
