@@ -15,18 +15,28 @@ class RenderHandler implements ProxyHandler<any> {
    * @param prop An html tag name
    * @returns function that renders html elements based on the values and prop passed
    */
-  get(target: any, prop: string) {
+  get(target: any, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | boolean {
+    console.log(prop);
+    if (prop === 'isProxy') {
+      return true;
+    }
     return (...args: Array<any>): HTMLElementProxy | HTMLElement => {
+      if (prop == 'th') {
+        console.log(123);
+        console.log(target.isProxy);
+        console.log(target, args);
+      }
       if (args.length === 1) {
         // Create an element and assign a value to it, if the argument is not an array
         if (!(args[0] instanceof Array)) return this.attachCallsProxy(this.createElement(args[0], prop));
         // If the argument is an array, assign it to the base argument and continue
         args = args[0];
       }
-      console.log(prop);
-      console.log(target);
+      if (prop == 'thead') {
+        console.log(args);
+      }
       // If there are two arguments, an array of values and an element to create for the values
-      if (args.length == 2 && typeof args[1] == 'function' && args[0] instanceof Array) {
+      if (args.length == 2 && (typeof args[1] == 'function' || args[1].isProxy) && args[0] instanceof Array) {
         return this.createParentFromChildren(prop, args[0], args[1]);
       }
       // If the arguments are comprised of a mix of data, pass it to a recursive function
@@ -69,7 +79,7 @@ class RenderHandler implements ProxyHandler<any> {
       }
       // If the curr is an instance of Array, re-call the proxy with the last prop given
       if (curr instanceof Array) {
-        curr = (this.get(target, prop)(curr) as HTMLElementProxy).element;
+        curr = ((this.get(target, prop) as any)(curr) as HTMLElementProxy).element;
       }
       base.appendChild(curr);
     });
@@ -89,19 +99,22 @@ class RenderHandler implements ProxyHandler<any> {
   }
 
   private attachCallsProxy(on: HTMLElement): (HTMLElement | HTMLElementProxy) {
-    // return on;
-    return new Proxy(on, new RenderHandler.AttachedProxyHandler);
+    return new Proxy(on, new this.AttachedProxyHandler);
   }
 
-  static AttachedProxyHandler = class implements ProxyHandler<any> {
+  private AttachedProxyHandler = class implements ProxyHandler<any> {
 
-    private _css: string;
-
-    private _class: Array<string>;
-
-    public get(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any) {
-      // console.log(prop);
-      // console.log(prop, (this as any)[prop](target, prop, receiver));
+    public get(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement) | string, receiver: any) {
+      // console.log(prop, (this as any)[prop] != undefined);
+      if ((this as any)[prop] == undefined) {
+        if (typeof target[prop as keyof HTMLElement] == 'function') {
+          return (...args: Array<any>) => {
+            (target[prop as keyof HTMLElement] as Function)(...args);
+            return receiver;
+          }
+        }
+        return target[prop as keyof HTMLElement];
+      }
       return ((this as any)[prop])(target, prop, receiver);
     }
 
@@ -109,17 +122,15 @@ class RenderHandler implements ProxyHandler<any> {
       return target;
     }
 
-    private style(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any): (args: string) => HTMLElement {
+    private style(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any): any {
       return (args: string) => {
-        this._css = args;
         target.setAttribute('style', args);
-        return this.get(target, prop, receiver);
+        return receiver;
       }
     }
 
-    private class(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any): (args: Array<string>) => HTMLElement {
+    private class(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any): any {
       return (args: Array<string>) => {
-        this._class = args;
         target.setAttribute('class', args.reduce((prev, curr) => `${prev} ${curr}`, ""));
         return this.get(target, prop, receiver);
       }
