@@ -5,6 +5,16 @@ interface HTMLElementProxy extends HTMLElement {
   setStyle: ((style: string) => void)
 }
 
+enum AccessMethod {
+  Function,
+  Parameter
+}
+
+type Target = {
+  access: AccessMethod,
+  [key: string]: any
+}
+
 /**
  * The render proxy handler that intercepts calls to the Render proxy and creates HTML Elements recursively
  */
@@ -15,28 +25,26 @@ class RenderHandler implements ProxyHandler<any> {
    * @param prop An html tag name
    * @returns function that renders html elements based on the values and prop passed
    */
-  get(target: any, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | boolean {
-    console.log(prop);
-    if (prop === 'isProxy') {
-      return true;
+  get(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | (HTMLElementProxy | HTMLElement) {
+    if (target.access === AccessMethod.Parameter) {
+      console.log(this.renderFunction(target, prop)());
+      return this.renderFunction(target, prop);
     }
+    return this.renderFunction(target, prop);
+  }
+
+  private renderFunction(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) {
     return (...args: Array<any>): HTMLElementProxy | HTMLElement => {
-      if (prop == 'th') {
-        console.log(123);
-        console.log(target.isProxy);
-        console.log(target, args);
-      }
+      const isArgProxy = (typeof args[1] == 'function') || ((typeof args[1] == 'object') && (args[1].isProxy === true));
       if (args.length === 1) {
         // Create an element and assign a value to it, if the argument is not an array
         if (!(args[0] instanceof Array)) return this.attachCallsProxy(this.createElement(args[0], prop));
         // If the argument is an array, assign it to the base argument and continue
         args = args[0];
       }
-      if (prop == 'thead') {
-        console.log(args);
-      }
+      // console.log(isArgProxy);
       // If there are two arguments, an array of values and an element to create for the values
-      if (args.length == 2 && (typeof args[1] == 'function' || args[1].isProxy) && args[0] instanceof Array) {
+      if (args.length == 2 && isArgProxy && args[0] instanceof Array) {
         return this.createParentFromChildren(prop, args[0], args[1]);
       }
       // If the arguments are comprised of a mix of data, pass it to a recursive function
@@ -55,7 +63,9 @@ class RenderHandler implements ProxyHandler<any> {
     const base = this.createElement("", prop);
     // Loop through the values and call the element to create with the value
     // when accessing a value we call the proxy's get method again to create an element with a value (or multiple values)
-    const subElements = values.map(value => nextElement(value).element);
+    const subElements = values.map(value => {
+      return nextElement(value).element
+    });
     base.append(...subElements);
     return this.attachCallsProxy(base);
   }
@@ -67,7 +77,7 @@ class RenderHandler implements ProxyHandler<any> {
    * @param values The values to create the elements with
    * @returns The parent HTML Element that was created
    */
-  private createParentFromValues(target: any, prop: string, values: Array<any>): (HTMLElementProxy | HTMLElement) {
+  private createParentFromValues(target: Target, prop: string, values: Array<any>): (HTMLElementProxy | HTMLElement) {
     const base = this.createElement("", prop);
     values.forEach((curr) => {
       if (curr instanceof Object && curr instanceof HTMLElement) {
@@ -98,14 +108,26 @@ class RenderHandler implements ProxyHandler<any> {
     return el;
   }
 
+  private nanoId(t: number = 21) {
+    let nanoid = (t=21)=>{let e="",r=crypto.getRandomValues(new Uint8Array(t));for(;t--;){let n=63&r[t];e+=n<36?n.toString(36):n<62?(n-26).toString(36).toUpperCase():n<63?"_":"-"}return e};
+    return nanoid(t);
+  }
+
   private attachCallsProxy(on: HTMLElement): (HTMLElement | HTMLElementProxy) {
     return new Proxy(on, new this.AttachedProxyHandler);
   }
 
   private AttachedProxyHandler = class implements ProxyHandler<any> {
 
+    public set(target: HTMLElement, prop: keyof HTMLElement, receiver: any) {
+      if ((this as any)[prop] != undefined) {
+        return (this as any)[prop](target, prop, receiver)(receiver());
+      }
+      (target as any)[prop] = receiver;
+      return true;
+    }
+
     public get(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement) | string, receiver: any) {
-      // console.log(prop, (this as any)[prop] != undefined);
       if ((this as any)[prop] == undefined) {
         if (typeof target[prop as keyof HTMLElement] == 'function') {
           return (...args: Array<any>) => {
@@ -118,13 +140,19 @@ class RenderHandler implements ProxyHandler<any> {
       return ((this as any)[prop])(target, prop, receiver);
     }
 
+    private isProxy() {
+      return true;
+    }
+
     private element(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any) {
       return target;
     }
 
     private style(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any): any {
       return (args: string) => {
-        target.setAttribute('style', args);
+        let currentStyle = target.getAttribute('style') ?? "";
+        currentStyle = (currentStyle == "" || currentStyle.slice(-1) == ';') ? currentStyle : `${currentStyle}; `;
+        target.setAttribute('style', `${currentStyle}${args}`);
         return receiver;
       }
     }
@@ -139,4 +167,5 @@ class RenderHandler implements ProxyHandler<any> {
 }
 
 // Export a proxy for the user, using the proxyHandler
-export const Render = new Proxy({}, new RenderHandler);
+export const Render = new Proxy({access: AccessMethod.Function, isProxy: true} as Target, new RenderHandler);
+export const Element = new Proxy({access: AccessMethod.Parameter, isProxy: true} as Target, new RenderHandler);

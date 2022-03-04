@@ -6,20 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <script src="./dist/web/index.js"></script>
-  <style>
-    #some-div > div > div {
-      border: 1px solid black;
-      margin-bottom: 2px;
-    }
-    #some-div > div > div:nth-child(1) div > div {
-      border: 1px solid black;
-      margin: 2px;
-    }
-    #some-div > div > div > div div  {
-      box-sizing: border-box;
-      padding-left: 15px;
-    }
-  </style>
 </head>
 <body>
   <div id="wrapper">
@@ -29,6 +15,7 @@
     <button onclick="changeValue()">Change control value</button>
     <div id="some-table"></div>
     <div id="some-div"></div>
+    <div id="some-table-with-class"></div>
   </div>
   <script>
     const headers = ["Name", "Age", "School"];
@@ -48,8 +35,9 @@
       ["Izuku Midoriya", "16", "UA High"],
       ["Yonatan Vega", "24", "College of Management"],
     ];
-    document.getElementById("some-table").appendChild(Reelm.getTable(headers, rows));
-    // document.getElementById("some-div").appendChild(Reelm.getDiv(divs));
+    //document.getElementById("some-table").appendChild(Reelm.getTable(headers, rows));
+    //document.getElementById("some-div").appendChild(Reelm.getDiv(divs));
+    document.getElementById("some-div").appendChild(Reelm.table.element);
     const frozen = new Set();
     const id = 'control'
     // Set a function on the document that returns it's context
