@@ -12,7 +12,8 @@
   "scripts": {
     "build:node": "webpack --config ./webpack.config.node.js --mode=development",
     "build:web": "webpack --config ./webpack.config.web.js --mode=production",
-    "build:web:watch": "webpack --config ./webpack.config.web.js --mode=development --watch"
+    "build:web:watch": "webpack serve --config ./webpack.config.web.js --mode=development",
+    "build:trans": "tsc ./src/transformers/transformer"
   },
   "bugs": {
     "url": "https://github.com/theclocker/reelm/issues"
@@ -20,10 +21,13 @@
   "homepage": "https://github.com/theclocker/reelm#readme",
   "author": "Jonathan Vega",
   "devDependencies": {
+    "html-webpack-plugin": "^5.5.0",
     "ts-loader": "^9.2.6",
+    "ttypescript": "^1.5.13",
     "typescript": "^4.5.5",
     "webpack": "^5.69.1",
-    "webpack-cli": "^4.9.2"
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.7.4"
   },
   "license": "ISC"
 }

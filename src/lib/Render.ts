@@ -11,6 +11,8 @@ enum AccessMethod {
 }
 
 type Target = {
+  new(...args: any[]): any;
+  <T extends {new (...args: any[]): {}}>(component: T, ...classArgs: any[]): InstanceType<T>;
   access: AccessMethod,
   [key: string]: any
 }
@@ -25,9 +27,8 @@ class RenderHandler implements ProxyHandler<any> {
    * @param prop An html tag name
    * @returns function that renders html elements based on the values and prop passed
    */
-  get(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | (HTMLElementProxy | HTMLElement) {
+   public get(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | (HTMLElementProxy | HTMLElement) {
     if (target.access === AccessMethod.Parameter) {
-      console.log(this.renderFunction(target, prop)());
       return this.renderFunction(target, prop);
     }
     return this.renderFunction(target, prop);
@@ -108,15 +109,13 @@ class RenderHandler implements ProxyHandler<any> {
     return el;
   }
 
-  private nanoId(t: number = 21) {
-    let nanoid = (t=21)=>{let e="",r=crypto.getRandomValues(new Uint8Array(t));for(;t--;){let n=63&r[t];e+=n<36?n.toString(36):n<62?(n-26).toString(36).toUpperCase():n<63?"_":"-"}return e};
-    return nanoid(t);
-  }
-
   private attachCallsProxy(on: HTMLElement): (HTMLElement | HTMLElementProxy) {
     return new Proxy(on, new this.AttachedProxyHandler);
   }
 
+  /**
+   * Proxy being attached to the HTMLElement resolved from the render method
+   */
   private AttachedProxyHandler = class implements ProxyHandler<any> {
 
     public set(target: HTMLElement, prop: keyof HTMLElement, receiver: any) {
@@ -167,5 +166,12 @@ class RenderHandler implements ProxyHandler<any> {
 }
 
 // Export a proxy for the user, using the proxyHandler
-export const Render = new Proxy({access: AccessMethod.Function, isProxy: true} as Target, new RenderHandler);
-export const Element = new Proxy({access: AccessMethod.Parameter, isProxy: true} as Target, new RenderHandler);
+export const Render: Target = new Proxy({
+  access: AccessMethod.Function,
+  isProxy: true
+} as unknown as Target, new RenderHandler);
+
+export const Element = new Proxy({
+  access: AccessMethod.Parameter,
+  isProxy: true
+} as unknown as Target, new RenderHandler);

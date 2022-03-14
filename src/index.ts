@@ -1,5 +1,5 @@
-import { Render, Element } from './Render';
-import { Table } from './Table';
+import { Render } from './lib/Render';
+import { Table } from './examples/Table';
 
 function getDiv(rows: Array<any>) {
   return Render.div(rows).style(

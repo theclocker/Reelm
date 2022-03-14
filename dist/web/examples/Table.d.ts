@@ -1,4 +1,4 @@
-export declare class Table {
+declare class Table {
     private headers;
     private rows;
     constructor(headers: any[], rows: any[][]);
@@ -6,3 +6,4 @@ export declare class Table {
     onclick(event: Event): void;
     render(): any;
 }
+export { Table };
