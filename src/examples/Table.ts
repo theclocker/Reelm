@@ -4,24 +4,45 @@ import { Reelm } from "../lib/Decorators";
 @Reelm.Component
 class Table {
 
-  constructor(private headers: any[], private rows: any[][]) {}
+  @Reelm.Watch something: string = "Hello, World!";
+  @Reelm.Watch foo: number = 123;
+
+  constructor(private headers: any[], private rows: any[][]) {
+    console.log(this);
+    this.foo = 456;
+  }
 
   @Reelm.Prop style() {
     return `
       background: red;
+      display: inline-block;
       border: 1px solid black;
     `
   }
 
   @Reelm.Prop onclick(event: Event) {
-    console.log(event);
+    // this.something = `Hello, ${Math.random()}`;
   }
   
   render() {
-    return Render.table(
-      Render.thead(Th(this.headers)),
-      Render.tbody(
-        this.rows.map(row => new Tr(row))
+    console.log(this);
+    return Render.div(
+      Render.span(this.something),
+      Render.input()
+      .addEventListener('blur', ((event: Event) => {
+        // console.log((event.target as HTMLInputElement).value);
+        console.log(this);
+        this.something = (event.target as HTMLInputElement).value;
+      }).bind(this))
+      .repeatApply('setAttribute', [
+        ['type', 'text'],
+        ['placeholder', 'name']
+      ]),
+      Render.table(
+        Render.thead(Th(this.headers)),
+        Render.tbody(
+          this.rows.map(row => (new Tr(row)).render())
+        )
       )
     );
   }

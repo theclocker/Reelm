@@ -20,6 +20,9 @@
   },
   "homepage": "https://github.com/theclocker/reelm#readme",
   "author": "Jonathan Vega",
+  "dependencies": {
+    "reflect-metadata": "^0.1.13"
+  },
   "devDependencies": {
     "html-webpack-plugin": "^5.5.0",
     "ts-loader": "^9.2.6",

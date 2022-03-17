@@ -1,6 +1,13 @@
 import { Render } from './lib/Render';
 import { Table } from './examples/Table';
 
+(Object.prototype as any).repeatApply = function(functionName: string, functionArguments: any[][]) {
+  functionArguments.forEach((value) => {
+    this[functionName](...value);
+  });
+  return this;
+};
+
 function getDiv(rows: Array<any>) {
   return Render.div(rows).style(
     `div > div {
@@ -45,6 +52,6 @@ const rows = [
   ["Yonatan Vega", "24", "College of Management"],
 ];
 
-export const table = new Table(headers, rows);
+export const table = new Table(headers, rows).render();
 
 export {Render, getTable, getDiv};
