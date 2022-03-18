@@ -6,9 +6,11 @@ class Table {
 
   @Reelm.Watch something: string = "Hello, World!";
   @Reelm.Watch foo: number = 123;
+  @Reelm.WatchTwo bar: number = 0;
 
   constructor(private headers: any[], private rows: any[][]) {
     console.log(this);
+    console.log(this.bar);
     this.foo = 456;
   }
 
@@ -29,11 +31,11 @@ class Table {
     return Render.div(
       Render.span(this.something),
       Render.input()
-      .addEventListener('blur', ((event: Event) => {
+      .addEventListener('blur', (event: Event) => {
         // console.log((event.target as HTMLInputElement).value);
         console.log(this);
         this.something = (event.target as HTMLInputElement).value;
-      }).bind(this))
+      })
       .repeatApply('setAttribute', [
         ['type', 'text'],
         ['placeholder', 'name']

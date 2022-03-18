@@ -70,6 +70,11 @@ export namespace Reelm {
     Reflect.defineMetadata(watchMetadataKey, existingWatchParameters, target);
   }
 
+  export function WatchTwo(target: any, propertyKey: string, expression?: boolean | Function): any {
+    console.log(target, propertyKey);
+    return 123;
+  }
+
   export function Prop(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     descriptor.value.prop = true;
     return descriptor.value;
