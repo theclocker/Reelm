@@ -1,3 +1,4 @@
+import { Reelm } from "./Decorators";
 
 interface HTMLElementProxy extends HTMLElement {
   element: HTMLElement,
@@ -38,13 +39,11 @@ class RenderHandler implements ProxyHandler<any> {
     return (...args: Array<any>): HTMLElementProxy | HTMLElement => {
       const isArgProxy = (typeof args[1] == 'function') || ((typeof args[1] == 'object') && (args[1].isProxy === true));
       if (args.length === 1) {
-        // console.log(args);
         // Create an element and assign a value to it, if the argument is not an array
         if (!(args[0] instanceof Array)) return this.attachCallsProxy(this.createElement(args[0], prop));
         // If the argument is an array, assign it to the base argument and continue
         args = args[0];
       }
-      // console.log(isArgProxy);
       // If there are two arguments, an array of values and an element to create for the values
       if (args.length == 2 && isArgProxy && args[0] instanceof Array) {
         return this.createParentFromChildren(prop, args[0], args[1]);
@@ -106,7 +105,15 @@ class RenderHandler implements ProxyHandler<any> {
    */
   private createElement(value: any, type: string): HTMLElement {
     const el = document.createElement(type);
-    el.innerHTML = (value instanceof Object && value.isProxy) ? value.element.innerHTML : value;
+    let innerHtml = value;
+    if (value instanceof Reelm.WatchProp) {
+      el.innerHTML = value.value;
+      value.onChange(((existingElement: any, newValue: any) => {
+        existingElement.innerHTML = newValue;
+      }).bind(null, el));
+      return el;
+    }
+    el.innerHTML = (value instanceof Object && value.isProxy) ? value.element.innerHTML : innerHtml;
     return el;
   }
 
@@ -120,7 +127,6 @@ class RenderHandler implements ProxyHandler<any> {
   private AttachedProxyHandler = class implements ProxyHandler<any> {
 
     public set(target: HTMLElement, prop: keyof HTMLElement, receiver: any) {
-      // console.log(prop);
       if ((this as any)[prop] != undefined) {
         return (this as any)[prop](target, prop, receiver)(receiver());
       }
@@ -133,6 +139,12 @@ class RenderHandler implements ProxyHandler<any> {
       if (!(methods.includes(prop))) {
         if (typeof target[prop as keyof HTMLElement] == 'function') {
           return (...args: Array<any>) => {
+            args = args.map(arg => {
+              if (arg instanceof Reelm.WatchProp) {
+                return arg.value;
+              }
+              return arg;
+            });
             (target[prop as keyof HTMLElement] as Function)(...args);
             return receiver;
           }

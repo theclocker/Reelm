@@ -6,12 +6,9 @@ class Table {
 
   @Reelm.Watch something: string = "Hello, World!";
   @Reelm.Watch foo: number = 123;
-  @Reelm.WatchTwo bar: number = 0;
 
   constructor(private headers: any[], private rows: any[][]) {
-    console.log(this);
-    console.log(this.bar);
-    this.foo = 456;
+    // console.log(this.foo);
   }
 
   @Reelm.Prop style() {
@@ -23,19 +20,21 @@ class Table {
   }
 
   @Reelm.Prop onclick(event: Event) {
+    // this.bar = Math.random();
     // this.something = `Hello, ${Math.random()}`;
+  }
+
+  private onInputChange(event: Event) {
+    this.something = (event.target as HTMLInputElement).value;
   }
   
   render() {
-    console.log(this);
     return Render.div(
-      Render.span(this.something),
-      Render.input()
-      .addEventListener('blur', (event: Event) => {
-        // console.log((event.target as HTMLInputElement).value);
-        console.log(this);
-        this.something = (event.target as HTMLInputElement).value;
-      })
+      Render.div(this.foo).addEventListener('click', () => {
+        this.foo = Math.random();
+      }),
+      Render.div(this.something),
+      Render.input().setAttribute('value', this.something).addEventListener('keyup', this.onInputChange.bind(this))
       .repeatApply('setAttribute', [
         ['type', 'text'],
         ['placeholder', 'name']

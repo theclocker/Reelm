@@ -12,12 +12,10 @@ export interface IReElmNode {
 export namespace Reelm {
   const watchMetadataKey = Symbol("watch");
 
-  export function Component<T extends {new (...args: any[]): any}>(constructor: T): T & ((...args: any[]) => any) {
-    const extender = class extends constructor {
+  export function Component<T extends {new (...args: any[]): any}>(constructor: T): any {
+    return class extends constructor {
       props: {[k: string]: any} = {};
       state: {[k: string]: any} = {};
-
-      private renderResult: HTMLElement;
 
       setProps(props: {[k: string]: any}): void {
         this.props = props;
@@ -27,7 +25,7 @@ export namespace Reelm {
         this.state = state;
       }
 
-      render(bindTarget: any) {
+      render() {
         const element = super.render();
         const proxyTarget = Object.getPrototypeOf(Object.getPrototypeOf(this));
         const originalClassName = proxyTarget.constructor.name;
@@ -36,43 +34,46 @@ export namespace Reelm {
         }
         for (const [key, value] of Object.entries(constructor.prototype)) {
           if (value instanceof Function && (value as any).prop === true) {
-            element[key] = value.bind(bindTarget || this);
+            element[key] = value;
           }
         }
-        if (this.renderResult) {
-          this.renderResult.parentNode.replaceChild(element.element, (this.renderResult as any).element);
-        }
-        this.renderResult = element;
-        return this.renderResult;
+        return element;
       }
     };
-    return new Proxy(extender, {
-      construct(target: any, args: any[]): any {
-        const targetInstance = new target(...args);
-        const resultingProxy = new Proxy(targetInstance, {
-          set(innerTarget: any, prop: any, value: any) {
-            const watchParams: string[] = Reflect.getOwnMetadata(watchMetadataKey, Object.getPrototypeOf(Object.getPrototypeOf(innerTarget)));
-            Reflect.set(innerTarget, prop, value);
-            if (watchParams && watchParams.includes(prop)) {
-              innerTarget.render.bind(resultingProxy)(resultingProxy);
-            }
-            return true;
-          }
-        });
-        return resultingProxy;
+  }
+
+  export function Watch(target: any, propertyKey: string, expression?: boolean | Function): any {
+    const returnClass = new WatchProp(null);
+    Object.defineProperty(target, propertyKey, {
+      get: () => returnClass,
+      set: (value: any) => {
+        returnClass.value = value;
       }
     });
   }
 
-  export function Watch(target: any, propertyKey: string, expression?: boolean | Function) {
-    const existingWatchParameters: string[] = Reflect.getOwnMetadata(watchMetadataKey, target) || [];
-    existingWatchParameters.push(propertyKey);
-    Reflect.defineMetadata(watchMetadataKey, existingWatchParameters, target);
-  }
+  export class WatchProp {
 
-  export function WatchTwo(target: any, propertyKey: string, expression?: boolean | Function): any {
-    console.log(target, propertyKey);
-    return 123;
+    private listeners: {(value: any): void}[] = [];
+
+    constructor(public _value?: any) {}
+
+    public set value(value: any) {
+      this._value = value;
+      this.listeners.forEach((func) => {func(value)});
+    }
+
+    public get value() {
+      return this._value;
+    }
+
+    public onChange(callback: {(value: any): void}): number {
+      return this.listeners.push(callback);
+    }
+
+    public unsubscribe(index: number) {
+      this.listeners.splice(index, 1);
+    }
   }
 
   export function Prop(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
