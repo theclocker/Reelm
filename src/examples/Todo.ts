@@ -8,7 +8,7 @@ interface Item {
 @Reelm.Component
 export class Todo {
 
-  @Reelm.Watch private items: Item[] = new Array<Item>();
+  @Reelm.Watch private items: Item[] = new Array<Item>({done: true, value: '123'});
   @Reelm.Watch private inputValue: string = '';
 
   private toggleTodoItem(item: Item) {
@@ -57,14 +57,14 @@ export class Todo {
           this.items.filter((item: Item) => !item.done).map((item: Item) => (
             this.makeListItem(item)
           ))
-        ).listen(this.items),
+        ),
         Render.hr(),
         Render.div(
           // Done items
           this.items.filter((item: Item) => item.done).map((item: Item) => (
             this.makeListItem(item)
           ))
-        )
+        ).listen(this.items)
       )
     );
   }

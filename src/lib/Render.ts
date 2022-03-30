@@ -29,9 +29,9 @@ class RenderHandler implements ProxyHandler<any> {
    * @returns function that renders html elements based on the values and prop passed
    */
    public get(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) | (HTMLElementProxy | HTMLElement) {
-    if (target.access === AccessMethod.Parameter) {
-      return this.renderFunction(target, prop);
-    }
+    // if (target.access === AccessMethod.Parameter) {
+    //   return this.renderFunction(target, prop);
+    // }
     return this.renderFunction(target, prop);
   }
 

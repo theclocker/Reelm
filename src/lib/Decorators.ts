@@ -53,28 +53,28 @@ export namespace Reelm {
     }
     Object.setPrototypeOf(returnClass, newProto);
     Object.defineProperty(target, propertyKey, {
-      get: () => new Proxy(returnClass, {
-        get(innerTarget: any, prop: any, receiver: any) {
-          const res = Reflect.get(innerTarget, prop, receiver);
-          if (res instanceof Function) {
-            return new Proxy(res, {
-              apply(applyTarget: any, thisArg: any, args: any[]) {
-                console.log(innerTarget, thisArg, args);
-                const valueBeforeApply = JSON.parse(JSON.stringify(innerTarget.value));
-                const applyRes = Reflect.apply(applyTarget, thisArg, args);
-                console.log(valueBeforeApply, innerTarget.value);
-                if (valueBeforeApply !== innerTarget.value) {
-                  console.log('Change');
-                  innerTarget.triggerChange();
-                }
-                return applyRes;
-              }
-            });
-          }
-          return res;
-        }
-      }),
-      // get: () => returnClass,
+      // get: () => new Proxy(returnClass, {
+      //   get(innerTarget: any, prop: any, receiver: any) {
+      //     const res = Reflect.get(innerTarget, prop, receiver);
+      //     if (res instanceof Function) {
+      //       return new Proxy(res, {
+      //         apply(applyTarget: any, thisArg: any, args: any[]) {
+      //           console.log(innerTarget, thisArg, args);
+      //           const valueBeforeApply = JSON.parse(JSON.stringify(innerTarget.value));
+      //           const applyRes = Reflect.apply(applyTarget, thisArg, args);
+      //           console.log(valueBeforeApply, innerTarget.value);
+      //           if (valueBeforeApply !== innerTarget.value) {
+      //             console.log('Change');
+      //             innerTarget.triggerChange();
+      //           }
+      //           return applyRes;
+      //         }
+      //       });
+      //     }
+      //     return res;
+      //   }
+      // }),
+      get: () => returnClass,
       set: (value: any) => {
         returnClass.value = value;
       }
