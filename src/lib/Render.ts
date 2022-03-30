@@ -40,9 +40,13 @@ class RenderHandler implements ProxyHandler<any> {
       const isArgProxy = (typeof args[1] == 'function') || ((typeof args[1] == 'object') && (args[1].isProxy === true));
       if (args.length === 1) {
         // Create an element and assign a value to it, if the argument is not an array
-        if (!(args[0] instanceof Array)) return this.attachCallsProxy(this.createElement(args[0], prop));
+        if (!(args[0] instanceof Array) && !args[0].isProxy) {
+          return this.attachCallsProxy(this.createElement(args[0], prop));
+        }
         // If the argument is an array, assign it to the base argument and continue
-        args = args[0];
+        if (args[0] instanceof Array) {
+          args = args[0];
+        }
       }
       // If there are two arguments, an array of values and an element to create for the values
       if (args.length == 2 && isArgProxy && args[0] instanceof Array) {
@@ -106,6 +110,7 @@ class RenderHandler implements ProxyHandler<any> {
   private createElement(value: any, type: string): HTMLElement {
     const el = document.createElement(type);
     let innerHtml = value;
+    // If the argument passed in is a WatchProp, subscribe to changes
     if (value instanceof Reelm.WatchProp) {
       el.innerHTML = value.value;
       value.onChange(((existingElement: any, newValue: any) => {
@@ -113,7 +118,9 @@ class RenderHandler implements ProxyHandler<any> {
       }).bind(null, el));
       return el;
     }
-    el.innerHTML = (value instanceof Object && value.isProxy) ? value.element.innerHTML : innerHtml;
+    if (!!value) {
+      el.replaceChildren((value instanceof Object && value.isProxy) ? value.element : innerHtml);
+    }
     return el;
   }
 
@@ -152,6 +159,18 @@ class RenderHandler implements ProxyHandler<any> {
         return target[prop as keyof HTMLElement];
       }
       return ((this as any)[prop])(target, prop, receiver);
+    }
+
+    private listen(target: HTMLElement, prop: keyof (HTMLElementProxy & HTMLElement), receiver: any) {
+      return (...args: Reelm.WatchProp<any>[]) => {
+        for (const fn of args) {
+          console.log(fn);
+          fn.onChange(((existingElement: any, newValue: any) => {
+            console.log(existingElement, newValue);
+            existingElement.innerHTML = newValue;
+          }).bind(null, target));
+        }
+      }
     }
 
     private isProxy() {

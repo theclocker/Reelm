@@ -15,6 +15,7 @@
     <div id="some-table"></div>
     <div id="some-div"></div>
     <div id="some-table-with-class"></div>
+    <div id="todo"></div>
   </div>
   <script>
     const headers = ["Name", "Age", "School"];
@@ -36,7 +37,8 @@
     ];
     //document.getElementById("some-table").appendChild(Reelm.getTable(headers, rows));
     //document.getElementById("some-div").appendChild(Reelm.getDiv(divs));
-    document.getElementById("some-div").appendChild(Reelm.table.element);
+    // document.getElementById("some-div").appendChild(Reelm.table.element);
+    document.getElementById("todo").appendChild(Reelm.todo.element);
     // document.getElementById("some-div").appendChild(Reelm.secondTable.element);
     const frozen = new Set();
     const id = 'control'

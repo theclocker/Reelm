@@ -27,12 +27,14 @@ class Table {
   private onInputChange(event: Event) {
     this.something = (event.target as HTMLInputElement).value;
   }
+
+  private getRandomHeader() {
+    this.foo = Math.random();
+  }
   
   render() {
     return Render.div(
-      Render.div(this.foo).addEventListener('click', () => {
-        this.foo = Math.random();
-      }),
+      Render.div(this.foo).addEventListener('click', this.getRandomHeader.bind(this)),
       Render.div(this.something),
       Render.input().setAttribute('value', this.something).addEventListener('keyup', this.onInputChange.bind(this))
       .repeatApply('setAttribute', [

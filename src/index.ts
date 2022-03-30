@@ -1,5 +1,6 @@
 import { Render } from './lib/Render';
 import { Table } from './examples/Table';
+import { Todo } from './examples/Todo';
 
 (Object.prototype as any).repeatApply = function(functionName: string, functionArguments: any[][]) {
   functionArguments.forEach((value) => {
@@ -52,6 +53,8 @@ const rows = [
   ["Yonatan Vega", "24", "College of Management"],
 ];
 
-export const table = new Table(headers, rows).render();
+// export const table = new Table(headers, rows).render();
+export const todo = new Todo().render();
+console.log(todo);
 
 export {Render, getTable, getDiv};
