@@ -9,7 +9,8 @@ import { Todo } from './examples/Todo';
   return this;
 };
 
-function getDiv(rows: Array<any>) {
+export function getDiv(rows: Array<any>) {
+  console.log(rows);
   return Render.div(rows).style(
     `div > div {
       border: 1px solid black;
@@ -54,7 +55,7 @@ const rows = [
 ];
 
 // export const table = new Table(headers, rows).render();
-export const todo = new Todo().render();
-console.log(todo);
+// console.log(todo);
 
-export {Render, getTable, getDiv};
+export {Render, getTable };
+export const todo = new Todo().render();

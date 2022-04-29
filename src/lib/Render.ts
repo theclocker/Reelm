@@ -1,4 +1,5 @@
 import { Reelm } from "./Decorators";
+import * as _ from 'lodash';
 
 interface HTMLElementProxy extends HTMLElement {
   element: HTMLElement,
@@ -37,11 +38,13 @@ class RenderHandler implements ProxyHandler<any> {
 
   private renderFunction(target: Target, prop: string): ((...args: Array<any>) => HTMLElementProxy | HTMLElement) {
     return (...args: Array<any>): HTMLElementProxy | HTMLElement => {
+      console.log(_.cloneDeep(args), prop);
       const isArgProxy = (typeof args[1] == 'function') || ((typeof args[1] == 'object') && (args[1].isProxy === true));
       if (args.length === 1) {
+        // console.log(args[0] instanceof Reelm.WatchProp && (args[0] as any).original != undefined);
         // Create an element and assign a value to it, if the argument is not an array
-        if (!(args[0] instanceof Array) && !args[0].isProxy) {
-          return this.attachCallsProxy(this.createElement(args[0], prop));
+        if (!(args[0] instanceof Array) && !args[0].isProxy && !(args[0] instanceof Reelm.WatchProp && args[0].value instanceof Array)) {          
+          return this.attachCallsProxy(this.createElement(target, args[0], prop));
         }
         // If the argument is an array, assign it to the base argument and continue
         if (args[0] instanceof Array) {
@@ -50,9 +53,10 @@ class RenderHandler implements ProxyHandler<any> {
       }
       // If there are two arguments, an array of values and an element to create for the values
       if (args.length == 2 && isArgProxy && args[0] instanceof Array) {
-        return this.createParentFromChildren(prop, args[0], args[1]);
+        return this.createParentFromChildren(target, prop, args[0], args[1]);
       }
       // If the arguments are comprised of a mix of data, pass it to a recursive function
+      // console.log(target, prop, args);
       return this.createParentFromValues(target, prop, args);
     };
   }
@@ -64,8 +68,8 @@ class RenderHandler implements ProxyHandler<any> {
    * @param nextElement The next element of the proxy to create
    * @returns The final HTML Element created from the children and the next element function
    */
-  private createParentFromChildren(prop: string, values: Array<any>, nextElement: ((...args: Array<any>) => any)): (HTMLElementProxy | HTMLElement) {
-    const base = this.createElement("", prop);
+  private createParentFromChildren(target: Target, prop: string, values: Array<any>, nextElement: ((...args: Array<any>) => any)): (HTMLElementProxy | HTMLElement) {
+    const base = this.createElement(target, "", prop);
     // Loop through the values and call the element to create with the value
     // when accessing a value we call the proxy's get method again to create an element with a value (or multiple values)
     const subElements = values.map(value => {
@@ -83,20 +87,24 @@ class RenderHandler implements ProxyHandler<any> {
    * @returns The parent HTML Element that was created
    */
   private createParentFromValues(target: Target, prop: string, values: Array<any>): (HTMLElementProxy | HTMLElement) {
-    const base = this.createElement("", prop);
-    values.forEach((curr) => {
+    const base = document.createElement(prop);
+    values.forEach((curr: any | any[]) => {
       if (curr instanceof Object && curr instanceof HTMLElement) {
         curr = (curr as HTMLElementProxy).element;
       }
       // Create elements when the typeof the curr is not an object and not an html element
       if (!(curr instanceof HTMLElement) && typeof curr !== 'object') {
-        curr = this.createElement(curr, prop);
+        curr = this.createElement(target, curr, prop);
       }
       // If the curr is an instance of Array, re-call the proxy with the last prop given
       if (curr instanceof Array) {
         curr = ((this.get(target, prop) as any)(curr) as HTMLElementProxy).element;
       }
-      base.appendChild(curr);
+      // If the element is a watch prop
+      if (curr instanceof Reelm.WatchProp) {
+        curr = Array.from(this.createElement(target, curr, prop).childNodes);
+      }
+      base.append(...(curr instanceof Array ? curr : [curr]));
     });
     return this.attachCallsProxy(base);
   }
@@ -107,14 +115,36 @@ class RenderHandler implements ProxyHandler<any> {
    * @param type the type of the element
    * @returns HTMLElement
    */
-  private createElement(value: any, type: string): HTMLElement {
+  private createElement(target: Target, value: any, type: string): HTMLElement {
     const el = document.createElement(type);
     let innerHtml = value;
     // If the argument passed in is a WatchProp, subscribe to changes
     if (value instanceof Reelm.WatchProp) {
-      el.innerHTML = value.value;
-      value.onChange(((existingElement: any, newValue: any) => {
-        existingElement.innerHTML = newValue;
+      const watchPropValue = (watchProp: Reelm.WatchProp<typeof value.value>) => {
+        if (watchProp.value instanceof Array) {
+          // console.log((this.createParentFromValues(target, type, watchProp.value) as any).element);
+          // return el.appendChild((this.createParentFromValues(target, type, watchProp.value) as any).element);
+          return watchProp.value.reduce((prev: HTMLElement, child) => {
+            console.log(child);
+            prev.appendChild((() => {
+              if (child.isProxy || child instanceof HTMLElement) {
+                return child.element;
+              }
+              const newElement = document.createElement(type);
+              newElement.innerHTML = child;
+              return newElement;
+            })());
+            return prev;
+          }, document.createElement('div')).innerHTML;
+        }
+        return value.value;
+      }
+      el.innerHTML = watchPropValue(value);
+      const listenTo = (value as any).original != undefined ? (value as any).original : value;
+      listenTo.onChange(((existingElement: any, newValue: any) => {
+        //console.log(newValue, existingElement, target);
+        console.log(listenTo.recreateWithSteps(listenTo.watchSymbol));
+        existingElement.innerHTML = watchPropValue(newValue);
       }).bind(null, el));
       return el;
     }
@@ -166,7 +196,7 @@ class RenderHandler implements ProxyHandler<any> {
         for (const fn of args) {
           console.log(fn);
           fn.onChange(((existingElement: any, newValue: any) => {
-            console.log(existingElement, newValue);
+            // console.log(existingElement, newValue);
             existingElement.innerHTML = newValue;
           }).bind(null, target));
         }

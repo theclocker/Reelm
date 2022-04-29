@@ -8,7 +8,9 @@ interface Item {
 @Reelm.Component
 export class Todo {
 
-  @Reelm.Watch private items: Item[] = new Array<Item>({done: true, value: '123'});
+  @Reelm.Watch private items: Item[] = new Array<Item>(
+    {done: true, value: '123'}, {done: false, value: '456'},
+  );
   @Reelm.Watch private inputValue: string = '';
 
   private toggleTodoItem(item: Item) {
@@ -16,24 +18,21 @@ export class Todo {
   }
 
   private makeListItem(item: Item) {
-    return Render.div(
-      Render.label(
+    return Render.label(
         Render.input().repeatApply('setAttribute', [
           ['type', 'checkbox'],
           ['checked', item.done]
         ]),
-        Render.div(item.value)
-      ).addEventListener('click', this.toggleTodoItem.bind(this, item))
-    );
+        Render.input().setAttribute('value', item.value)
+      ).addEventListener('click', this.toggleTodoItem.bind(this, item));
   }
 
   private addTodoItem(event: Event & {submitter: HTMLInputElement}) {
     event.preventDefault();
     this.items.push({
-      value: (this.inputValue as any).value,
       done: false,
+      value: (this.inputValue as any).value,
     });
-    (this.items as any).triggerChange();
     console.log(this.items);
   }
 
@@ -51,7 +50,8 @@ export class Todo {
             ['value', (this.inputValue as any).value]
           ]).addEventListener('keyup', this.changeInputValue.bind(this)),
         ).addEventListener('submit', this.addTodoItem.bind(this)),
-        Render.div(this.items.map(item => item.value)),
+        Render.span(this.inputValue),
+        // Render.span(this.items.map(item => item.value)),
         Render.div(
           // Pending items
           this.items.filter((item: Item) => !item.done).map((item: Item) => (
@@ -59,12 +59,12 @@ export class Todo {
           ))
         ),
         Render.hr(),
-        Render.div(
+        Render.p(
           // Done items
-          this.items.filter((item: Item) => item.done).map((item: Item) => (
+          this.items.filter((item: Item) => true).map((item: Item) => (
             this.makeListItem(item)
           ))
-        ).listen(this.items)
+        )
       )
     );
   }

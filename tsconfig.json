@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "lib": ["es5", "es2015.promise", "dom", "es2015", "es6"],
+        "types": ["node"],
         "module": "CommonJS",
         "target": "es5",
         "declaration": true,
@@ -10,6 +11,7 @@
         "outDir": "./dist/",
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true,
+        "downlevelIteration": true,
         "sourceMap": true,
     },
     "include": [

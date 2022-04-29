@@ -21,9 +21,14 @@
   "homepage": "https://github.com/theclocker/reelm#readme",
   "author": "Jonathan Vega",
   "dependencies": {
+    "@types/deep-equal": "^1.0.1",
+    "deep-equal": "^2.0.5",
+    "lodash": "^4.17.21",
+    "nanoid": "^3.3.2",
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.181",
     "html-webpack-plugin": "^5.5.0",
     "ts-loader": "^9.2.6",
     "ttypescript": "^1.5.13",
